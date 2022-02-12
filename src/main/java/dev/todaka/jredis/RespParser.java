@@ -12,29 +12,46 @@ public class RespParser {
     public String tryParse(ByteBuf buf) {
         tryEnqueueLines(buf);
 
-        if (lineQueue.isEmpty()) {
+        final var firstLine = lineQueue.peekFirst();
+        if (firstLine == null) {
             return null;
+        }
+
+        if (firstLine.type == '$') {
+            if (lineQueue.size() < 2) {
+                return null;
+            }
+            lineQueue.removeFirst();
+            return lineQueue.removeFirst().content;
         }
         return lineQueue.removeFirst().content;
     }
 
     private void tryEnqueueLines(ByteBuf buf) {
         while (true) {
-            if (buf.readableBytes() < 3) {
+            if (!buf.isReadable()) {
                 break;
             }
-            final var type = buf.getByte(buf.readerIndex());
 
             RespLine respLine;
-            switch (type) {
-                case '+':
-                case '-':
-                case ':': {
-                    respLine = readUntilNewLine(buf);
-                    break;
+
+            // bulk string 2nd line
+            if (!lineQueue.isEmpty() && lineQueue.getLast().type == '$') {
+                final var stringLen = Integer.parseInt(lineQueue.getLast().content);
+                respLine = readBulkStringSecondLine(buf, stringLen);
+            } else {
+                final var type = buf.getByte(buf.readerIndex());
+                switch (type) {
+                    case '+':
+                    case '-':
+                    case ':':
+                    case '$': {
+                        respLine = readOneLine(buf);
+                        break;
+                    }
+                    default:
+                        throw new IllegalArgumentException("unknown response type found : " + type);
                 }
-                default:
-                    throw new IllegalArgumentException("unknown response type found : " + type);
             }
             if (respLine != null) {
                 lineQueue.addLast(respLine);
@@ -44,7 +61,7 @@ public class RespParser {
         }
     }
 
-    private RespLine readUntilNewLine(ByteBuf buf) {
+    private RespLine readOneLine(ByteBuf buf) {
         int index = buf.bytesBefore((byte) '\n');
         if (index == -1) {
             return null;
@@ -54,6 +71,14 @@ public class RespParser {
         return new RespLine(type, line.substring(1, line.length() - 2));
     }
 
+    private RespLine readBulkStringSecondLine(ByteBuf buf, int len) {
+        if (buf.readableBytes() < len + 2) {
+            return null;
+        }
+        final var line = buf.readBytes(len + 2).toString(StandardCharsets.UTF_8);
+        return new RespLine((byte) 'b', line.substring(0, line.length() - 2));
+    }
+    
     private static class RespLine {
         final byte type;
         final String content;

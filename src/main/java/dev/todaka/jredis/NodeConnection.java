@@ -11,15 +11,12 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.concurrent.CompletableFuture;
 
-public class NodeConnection implements AutoCloseable {
+public class NodeConnection implements AutoCloseable, RedisCommands {
     private EventLoopGroup workerGroup;
     private Channel channel;
 
-    public CompletableFuture<Void> connect() {
-        String host = "127.0.0.1";
-        int port = 6379;
+    public CompletableFuture<Void> connect(String host, int port) {
         workerGroup = new NioEventLoopGroup();
-
         Bootstrap b = new Bootstrap();
         b.group(workerGroup);
         b.channel(NioSocketChannel.class);
@@ -55,15 +52,7 @@ public class NodeConnection implements AutoCloseable {
         workerGroup.shutdownGracefully().sync();
     }
 
-    public CompletableFuture<RedisResponse> ping() {
-        return dispatchCommand("PING");
-    }
-
-    public CompletableFuture<RedisResponse> exists(String key) {
-        return dispatchCommand("EXISTS " + key);
-    }
-
-    private CompletableFuture<RedisResponse> dispatchCommand(String command) {
+    public CompletableFuture<RedisResponse> dispatchCommand(String command) {
         System.out.println("execute " + command);
         final var redisCommand = new RedisCommand(command + "\r\n");
         channel.writeAndFlush(redisCommand);

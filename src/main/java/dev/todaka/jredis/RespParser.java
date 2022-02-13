@@ -7,85 +7,154 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class RespParser {
-    private final Deque<RespLine> lineQueue = new ArrayDeque<>();
+    private final Deque<byte[]> pendingTokens = new ArrayDeque<>();
+    private final Deque<TokenType> nextTokenType = new ArrayDeque<>();
+    private int bulkStringLen = -1;
 
-    public String tryParse(ByteBuf buf) {
-        tryEnqueueLines(buf);
-
-        final var firstLine = lineQueue.peekFirst();
-        if (firstLine == null) {
-            return null;
-        }
-
-        if (firstLine.type == '$') {
-            if (lineQueue.size() < 2) {
-                return null;
-            }
-            lineQueue.removeFirst();
-            return lineQueue.removeFirst().content;
-        }
-        return lineQueue.removeFirst().content;
+    public RedisResponse tryParse(ByteBuf buf) {
+        tokenize(buf);
+        return parse();
     }
 
-    private void tryEnqueueLines(ByteBuf buf) {
+    private void tokenize(ByteBuf buf) {
         while (true) {
-            if (!buf.isReadable()) {
-                break;
+            if (nextTokenType.isEmpty()) {
+                nextTokenType.addLast(TokenType.TYPE);
             }
 
-            RespLine respLine;
-
-            // bulk string 2nd line
-            if (!lineQueue.isEmpty() && lineQueue.getLast().type == '$') {
-                final var stringLen = Integer.parseInt(lineQueue.getLast().content);
-                respLine = readBulkStringSecondLine(buf, stringLen);
-            } else {
-                final var type = buf.getByte(buf.readerIndex());
-                switch (type) {
-                    case '+':
-                    case '-':
-                    case ':':
-                    case '$': {
-                        respLine = readOneLine(buf);
-                        break;
+            switch (nextTokenType.getFirst()) {
+                case TYPE: {
+                    if (buf.readableBytes() < 1) {
+                        return;
                     }
-                    default:
-                        throw new IllegalArgumentException("unknown response type found : " + type);
+                    final var token = enqueueNBytes(buf, 1);
+                    // next expectation
+                    switch (token[0]) {
+                        case '+':
+                        case '-':
+                        case ':': {
+                            nextTokenType.addLast(TokenType.TILL_NEWLINE);
+                            nextTokenType.addLast(TokenType.NEW_LINE);
+                            break;
+                        }
+                        case '$': {
+                            nextTokenType.addLast(TokenType.BULK_STRING_LEN);
+                            nextTokenType.addLast(TokenType.NEW_LINE);
+                            nextTokenType.addLast(TokenType.BULK_STRING);
+                            nextTokenType.addLast(TokenType.NEW_LINE);
+                            break;
+                        }
+                        default: {
+                            throw new IllegalArgumentException("unknown response type found : " + token[0]);
+                        }
+                    }
+                    break;
+                }
+                case NEW_LINE: {
+                    if (buf.readableBytes() < 2) {
+                        return;
+                    }
+                    final var token = enqueueNBytes(buf, 2);
+                    if (token[0] != '\r' || token[1] != '\n') {
+                        throw new IllegalArgumentException(
+                                "new line expected, but found other binary : [" + token[0] + "," + token[1] + "]");
+                    }
+                    break;
+                }
+                case TILL_NEWLINE: {
+                    int index = buf.bytesBefore((byte) '\r');
+                    if (index == -1) {
+                        return;
+                    }
+                    enqueueNBytes(buf, index);
+                    break;
+                }
+                case BULK_STRING_LEN: {
+                    int index = buf.bytesBefore((byte) '\r');
+                    if (index == -1) {
+                        return;
+                    }
+                    final var token = enqueueNBytes(buf, index);
+                    bulkStringLen = Integer.parseInt(new String(token, StandardCharsets.US_ASCII));
+                    if (bulkStringLen == -1) {
+                        // null bulk string, no bulk string body and new line.
+                        nextTokenType.removeFirst();
+                        nextTokenType.removeFirst();
+                    }
+                    break;
+                }
+                case BULK_STRING: {
+                    if (buf.readableBytes() < bulkStringLen) {
+                        return;
+                    }
+                    enqueueNBytes(buf, bulkStringLen);
+                    break;
                 }
             }
-            if (respLine != null) {
-                lineQueue.addLast(respLine);
-            } else {
-                break;
+            nextTokenType.removeFirst();
+        }
+    }
+
+    private byte[] enqueueNBytes(ByteBuf buf, int len) {
+        byte[] token = new byte[len];
+        buf.readBytes(token);
+        pendingTokens.addLast(token);
+        return token;
+    }
+
+    private RedisResponse parse() {
+        if (pendingTokens.size() < 3) {
+            return null;
+        }
+        final var iter = pendingTokens.iterator();
+        final var type = iter.next();
+        switch (type[0]) {
+            case '+': {
+                final var body = new String(iter.next(), StandardCharsets.UTF_8);
+                consumeNPendingTokens(3);
+                return new RedisResponse.StringResponse(body);
+            }
+            case '-': {
+                final var body = new String(iter.next(), StandardCharsets.UTF_8);
+                consumeNPendingTokens(3);
+                return new RedisResponse.ErrorResponse(body);
+            }
+            case ':': {
+                final var body = new String(iter.next(), StandardCharsets.UTF_8);
+                consumeNPendingTokens(3);
+                return new RedisResponse.LongResponse(Long.parseLong(body));
+            }
+            case '$': {
+                final var len = Long.parseLong(new String(iter.next(), StandardCharsets.UTF_8));
+                if (len == -1) {
+                    // null bulk string
+                    consumeNPendingTokens(3);
+                    return new RedisResponse.NullResponse();
+                } else {
+                    if (pendingTokens.size() < 5) {
+                        return null;
+                    }
+                    iter.next();
+                    final var body = new String(iter.next(), StandardCharsets.UTF_8);
+                    consumeNPendingTokens(5);
+                    return new RedisResponse.StringResponse(body);
+                }
             }
         }
+        return null;
     }
 
-    private RespLine readOneLine(ByteBuf buf) {
-        int index = buf.bytesBefore((byte) '\n');
-        if (index == -1) {
-            return null;
+    private void consumeNPendingTokens(int len) {
+        for (int i = 0; i < len; i++) {
+            pendingTokens.removeFirst();
         }
-        final var type = buf.getByte(buf.readerIndex());
-        final var line = buf.readBytes(index + 1).toString(StandardCharsets.UTF_8);
-        return new RespLine(type, line.substring(1, line.length() - 2));
     }
 
-    private RespLine readBulkStringSecondLine(ByteBuf buf, int len) {
-        if (buf.readableBytes() < len + 2) {
-            return null;
-        }
-        final var line = buf.readBytes(len + 2).toString(StandardCharsets.UTF_8);
-        return new RespLine((byte) 'b', line.substring(0, line.length() - 2));
-    }
-    
-    private static class RespLine {
-        final byte type;
-        final String content;
-
-        public RespLine(byte type, String content) {
-            this.type = type;
-            this.content = content;
-        }
+    private enum TokenType {
+        TYPE,
+        NEW_LINE,
+        TILL_NEWLINE,
+        BULK_STRING_LEN,
+        BULK_STRING,
     }
 }

@@ -55,15 +55,15 @@ public class NodeConnection implements AutoCloseable {
         workerGroup.shutdownGracefully().sync();
     }
 
-    public CompletableFuture<String> ping() {
+    public CompletableFuture<RedisResponse> ping() {
         return dispatchCommand("PING");
     }
 
-    public CompletableFuture<String> exists(String key) {
+    public CompletableFuture<RedisResponse> exists(String key) {
         return dispatchCommand("EXISTS " + key);
     }
 
-    private CompletableFuture<String> dispatchCommand(String command) {
+    private CompletableFuture<RedisResponse> dispatchCommand(String command) {
         System.out.println("execute " + command);
         final var redisCommand = new RedisCommand(command + "\r\n");
         channel.writeAndFlush(redisCommand);

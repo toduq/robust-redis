@@ -11,10 +11,10 @@ public class NodeConnectionTest {
     public void test() throws InterruptedException, ExecutionException {
         try (var nodeConn = new NodeConnection()) {
             nodeConn.connect().get();
-            assertThat(nodeConn.ping().get()).isEqualTo("PONG");
-            assertThat(nodeConn.ping().get()).isEqualTo("PONG");
-            assertThat(nodeConn.exists("abc").get()).isEqualTo("0");
-            assertThat(nodeConn.ping().get()).isEqualTo("PONG");
+            assertThat(nodeConn.ping().get()).isEqualTo(new RedisResponse.StringResponse("PONG"));
+            assertThat(nodeConn.ping().get()).isEqualTo(new RedisResponse.StringResponse("PONG"));
+            assertThat(nodeConn.exists("abc").get()).isEqualTo(new RedisResponse.LongResponse(0));
+            assertThat(nodeConn.ping().get()).isEqualTo(new RedisResponse.StringResponse("PONG"));
         }
     }
 }

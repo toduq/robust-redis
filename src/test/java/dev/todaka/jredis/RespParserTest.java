@@ -16,8 +16,8 @@ public class RespParserTest {
         ByteBufUtil.writeUtf8(buf, "NG\r");
         assertThat(respParser.tryParse(buf)).isEqualTo(null);
         ByteBufUtil.writeUtf8(buf, "\n-Error\r\n");
-        assertThat(respParser.tryParse(buf)).isEqualTo("PONG");
-        assertThat(respParser.tryParse(buf)).isEqualTo("Error");
+        assertThat(respParser.tryParse(buf)).isEqualTo(new RedisResponse.StringResponse("PONG"));
+        assertThat(respParser.tryParse(buf)).isEqualTo(new RedisResponse.ErrorResponse("Error"));
         assertThat(respParser.tryParse(buf)).isEqualTo(null);
     }
 
@@ -28,9 +28,9 @@ public class RespParserTest {
         ByteBufUtil.writeUtf8(buf, "$12\r\nHello, World\r\n");
         ByteBufUtil.writeUtf8(buf, "+PONG\r\n");
         ByteBufUtil.writeUtf8(buf, "$13\r\nHello, Redis!\r\n");
-        assertThat(respParser.tryParse(buf)).isEqualTo("Hello, World");
-        assertThat(respParser.tryParse(buf)).isEqualTo("PONG");
-        assertThat(respParser.tryParse(buf)).isEqualTo("Hello, Redis!");
+        assertThat(respParser.tryParse(buf)).isEqualTo(new RedisResponse.StringResponse("Hello, World"));
+        assertThat(respParser.tryParse(buf)).isEqualTo(new RedisResponse.StringResponse("PONG"));
+        assertThat(respParser.tryParse(buf)).isEqualTo(new RedisResponse.StringResponse("Hello, Redis!"));
         assertThat(respParser.tryParse(buf)).isEqualTo(null);
     }
 }

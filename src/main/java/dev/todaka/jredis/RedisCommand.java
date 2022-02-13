@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class RedisCommand {
     final String request;
-    final CompletableFuture<String> response;
+    final CompletableFuture<RedisResponse> response;
 
     public RedisCommand(String request) {
         this.request = request;

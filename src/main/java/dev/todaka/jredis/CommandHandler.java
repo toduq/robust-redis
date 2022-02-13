@@ -19,8 +19,8 @@ public class CommandHandler extends ChannelDuplexHandler {
     private ByteBuf buf;
 
     @Override
-    public void channelRegistered(ChannelHandlerContext ctx) {
-        System.out.println("channelRegistered");
+    public void channelActive(ChannelHandlerContext ctx) {
+        System.out.println("channelActive");
         buf = ctx.alloc().buffer();
         if (!channelReadyFuture.isDone()) {
             channelReadyFuture.complete(ctx.channel());
@@ -29,7 +29,7 @@ public class CommandHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) {
+    public void channelInactive(ChannelHandlerContext ctx) {
         buf.release();
         ctx.fireChannelUnregistered();
     }

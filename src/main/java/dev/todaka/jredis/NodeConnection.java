@@ -17,10 +17,10 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
 
     public CompletableFuture<Void> connect(String host, int port) {
         workerGroup = new NioEventLoopGroup();
-        Bootstrap b = new Bootstrap();
-        b.group(workerGroup);
-        b.channel(NioSocketChannel.class);
-        b.option(ChannelOption.SO_KEEPALIVE, true);
+        Bootstrap b = new Bootstrap()
+                .group(workerGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true);
 
         final var channelReadyFuture = new CompletableFuture<Channel>();
         final var connectionReadyFuture = new CompletableFuture<Void>();

@@ -2,6 +2,9 @@ package dev.todaka.jredis;
 
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 /**
  * See https://redis.io/commands
  */
@@ -13,30 +16,30 @@ public interface RedisCommands extends CommandDispatcher {
     }
 
     default CompletableFuture<RedisResponse> echo(String message) {
-        return dispatchCommand("ECHO " + message);
+        return dispatchCommand("ECHO", emptyList(), singletonList(message));
     }
 
     // === Keys Section ===
 
     default CompletableFuture<RedisResponse> set(String key, String value) {
-        return dispatchCommand("SET " + key + " " + value);
+        return dispatchCommand("SET", singletonList(key), singletonList(value));
     }
 
     default CompletableFuture<RedisResponse> get(String key) {
-        return dispatchCommand("GET " + key);
+        return dispatchCommand("GET", singletonList(key));
     }
 
     default CompletableFuture<RedisResponse> exists(String key) {
-        return dispatchCommand("EXISTS " + key);
+        return dispatchCommand("EXISTS", singletonList(key));
     }
 
     default CompletableFuture<RedisResponse> del(String key) {
-        return dispatchCommand("DEL " + key);
+        return dispatchCommand("DEL", singletonList(key));
     }
 
     // === Cluster Section ===
 
     default CompletableFuture<RedisResponse> clusterNodes() {
-        return dispatchCommand("CLUSTER NODES");
+        return dispatchCommand("CLUSTER", singletonList("NODES"));
     }
 }

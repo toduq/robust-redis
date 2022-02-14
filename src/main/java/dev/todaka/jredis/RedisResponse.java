@@ -1,25 +1,29 @@
 package dev.todaka.jredis;
 
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 public abstract class RedisResponse {
     @Value
-    static class StringResponse extends RedisResponse {
+    @EqualsAndHashCode(callSuper = false)
+    public static class StringResponse extends RedisResponse {
         String body;
     }
 
     @Value
-    static class ErrorResponse extends RedisResponse {
+    @EqualsAndHashCode(callSuper = false)
+    public static class ErrorResponse extends RedisResponse {
         String body;
     }
 
     @Value
-    static class LongResponse extends RedisResponse {
+    @EqualsAndHashCode(callSuper = false)
+    public static class LongResponse extends RedisResponse {
         long body;
     }
 
     @Value
-    static class NullResponse extends RedisResponse {
+    @EqualsAndHashCode(callSuper = false)
+    public static class NullResponse extends RedisResponse {
     }
-
 }

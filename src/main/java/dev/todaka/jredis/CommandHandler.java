@@ -38,7 +38,9 @@ public class CommandHandler extends ChannelDuplexHandler {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
         final RedisCommand redisCommand = (RedisCommand) msg;
         commandQueue.addLast(redisCommand);
-        ctx.write(redisCommand.toByteBuf(), promise);
+        final var buf = ctx.alloc().buffer();
+        redisCommand.writeToByteBuf(buf);
+        ctx.write(buf, promise);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package dev.todaka.jredis;
 
+import dev.todaka.jredis.connection.RedisURI;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -15,7 +16,7 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
     private EventLoopGroup workerGroup;
     private Channel channel;
 
-    public CompletableFuture<Void> connect(String host, int port) {
+    public CompletableFuture<NodeConnection> connect(RedisURI endpoint) {
         workerGroup = new NioEventLoopGroup();
         Bootstrap b = new Bootstrap()
                 .group(workerGroup)
@@ -23,14 +24,14 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
                 .option(ChannelOption.SO_KEEPALIVE, true);
 
         final var channelReadyFuture = new CompletableFuture<Channel>();
-        final var connectionReadyFuture = new CompletableFuture<Void>();
+        final var connectionReadyFuture = new CompletableFuture<NodeConnection>();
         channelReadyFuture.whenComplete((channel, throwable) -> {
             if (throwable != null) {
                 connectionReadyFuture.completeExceptionally(throwable);
                 return;
             }
             this.channel = channel;
-            connectionReadyFuture.complete(null);
+            connectionReadyFuture.complete(this);
         });
 
         b.handler(new ChannelInitializer<SocketChannel>() {
@@ -40,7 +41,7 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
             }
         });
 
-        b.connect(host, port);
+        b.connect(endpoint.getHost(), endpoint.getPort());
         return connectionReadyFuture;
     }
 
@@ -52,9 +53,8 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
         workerGroup.shutdownGracefully().sync();
     }
 
-    public CompletableFuture<RedisResponse> dispatchCommand(String command) {
-        System.out.println("execute " + command);
-        final var redisCommand = new RedisCommand(command + "\r\n");
+    public CompletableFuture<RedisResponse> dispatchCommand(RedisCommand redisCommand) {
+        System.out.println("execute " + redisCommand.command);
         channel.writeAndFlush(redisCommand);
         return redisCommand.response;
     }

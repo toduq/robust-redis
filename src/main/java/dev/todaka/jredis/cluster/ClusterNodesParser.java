@@ -1,5 +1,7 @@
 package dev.todaka.jredis.cluster;
 
+import lombok.experimental.UtilityClass;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -11,12 +13,13 @@ import java.util.stream.Collectors;
  * The CLUSTER NODES response format is as follows.
  * <id> <ip:port@cport> <flags> <master> <ping-sent> <pong-recv> <config-epoch> <link-state> <slot> <slot> ... <slot>
  */
+@UtilityClass
 public class ClusterNodesParser {
     public static List<ClusterNodeView> parse(String clusterNodes) {
         return Arrays
-                .stream(clusterNodes.trim().split("\r\n"))
+                .stream(clusterNodes.trim().split("\n"))
                 .map(line -> {
-                    final var columns = line.split(" ");
+                    final var columns = line.trim().split(" ");
                     final var slots = Arrays
                             .asList(columns)
                             .subList(8, columns.length)

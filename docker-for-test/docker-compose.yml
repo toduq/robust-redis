@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  standalone:
+    image: redis:6.2.6-alpine
+    command: redis-server --port 10001
+    ports:
+      - "10001:10001"
+  cluster:
+    build: ./cluster
+    ports:
+      - "11001-11006:11001-11006"

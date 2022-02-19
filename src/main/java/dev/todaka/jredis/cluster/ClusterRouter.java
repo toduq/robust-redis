@@ -46,7 +46,7 @@ public class ClusterRouter implements RedisRouter {
 
         synchronized (connectionPool) {
             return connectionPool.computeIfAbsent(
-                    uri, notUsed -> new NodeConnection().connect(uri));
+                    uri, notUsed -> NodeConnection.connectAsync(uri));
         }
     }
 }

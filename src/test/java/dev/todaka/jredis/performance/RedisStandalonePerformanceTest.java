@@ -1,0 +1,25 @@
+package dev.todaka.jredis.performance;
+
+import dev.todaka.jredis.NodeConnection;
+import dev.todaka.jredis.RedisResponse;
+import dev.todaka.jredis.connection.RedisURI;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+public class RedisStandalonePerformanceTest {
+    @Test
+    public void test() throws InterruptedException, ExecutionException {
+        try (var nodeConn = NodeConnection.connect(new RedisURI("127.0.0.1", 10001))) {
+            final var futures = new ArrayList<CompletableFuture<RedisResponse>>();
+            for (int i = 0; i < 100_000; i++) {
+                futures.add(nodeConn.incr(Long.toString(System.currentTimeMillis())));
+            }
+            for (CompletableFuture<RedisResponse> future : futures) {
+                future.get();
+            }
+        }
+    }
+}

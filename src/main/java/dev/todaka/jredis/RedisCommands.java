@@ -37,6 +37,10 @@ public interface RedisCommands extends CommandDispatcher {
         return dispatchCommand("DEL", singletonList(key));
     }
 
+    default CompletableFuture<RedisResponse> incr(String key) {
+        return dispatchCommand("INCR", singletonList(key));
+    }
+
     // === Cluster Section ===
 
     default CompletableFuture<RedisResponse> clusterNodes() {

@@ -48,9 +48,11 @@ public class CommandHandler extends ChannelDuplexHandler {
         System.out.println("channelRead");
         final ByteBuf _msg = (ByteBuf) msg;
         buf.writeBytes(_msg);
+        _msg.release();
 
-        final RedisResponse resp = respParser.tryParse(buf);
-        if (resp != null) {
+        while (true) {
+            final RedisResponse resp = respParser.tryParse(buf);
+            if (resp == null) break;
             final RedisCommand command = commandQueue.removeFirst();
             command.response.complete(resp);
         }

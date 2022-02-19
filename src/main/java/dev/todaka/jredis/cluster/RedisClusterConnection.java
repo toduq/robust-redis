@@ -13,8 +13,7 @@ public class RedisClusterConnection implements RedisCommands {
     private final ClusterRouter clusterRouter;
 
     public RedisClusterConnection(RedisURI initialEndpoint) throws InterruptedException, ExecutionException {
-        try (final var conn = new NodeConnection()) {
-            conn.connect(initialEndpoint).get();
+        try (final var conn = NodeConnection.connect(initialEndpoint)) {
             final var clusterNodes = (RedisResponse.StringResponse) conn.clusterNodes().get();
             final var views = ClusterNodesParser.parse(clusterNodes.getBody());
             clusterRouter = new ClusterRouter(views);

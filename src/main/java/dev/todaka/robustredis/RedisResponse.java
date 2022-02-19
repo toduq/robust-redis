@@ -1,4 +1,4 @@
-package dev.todaka.jredis;
+package dev.todaka.robustredis;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;

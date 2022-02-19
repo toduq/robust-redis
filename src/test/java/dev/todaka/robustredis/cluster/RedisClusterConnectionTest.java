@@ -1,7 +1,7 @@
-package dev.todaka.jredis.cluster;
+package dev.todaka.robustredis.cluster;
 
-import dev.todaka.jredis.RedisResponse;
-import dev.todaka.jredis.connection.RedisURI;
+import dev.todaka.robustredis.RedisResponse;
+import dev.todaka.robustredis.connection.RedisURI;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;

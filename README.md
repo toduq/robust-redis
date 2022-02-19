@@ -1,4 +1,4 @@
-# jredis - Simple Java Redis Client
+# robust-redis : Simple Java Redis Client
 
 Under development.
 

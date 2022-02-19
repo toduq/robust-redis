@@ -1,4 +1,4 @@
-package dev.todaka.jredis.connection;
+package dev.todaka.robustredis.connection;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;

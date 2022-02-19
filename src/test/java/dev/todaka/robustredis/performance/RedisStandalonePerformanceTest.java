@@ -1,8 +1,8 @@
-package dev.todaka.jredis.performance;
+package dev.todaka.robustredis.performance;
 
-import dev.todaka.jredis.NodeConnection;
-import dev.todaka.jredis.RedisResponse;
-import dev.todaka.jredis.connection.RedisURI;
+import dev.todaka.robustredis.NodeConnection;
+import dev.todaka.robustredis.RedisResponse;
+import dev.todaka.robustredis.connection.RedisURI;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

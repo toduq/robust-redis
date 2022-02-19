@@ -1,4 +1,4 @@
-package dev.todaka.jredis;
+package dev.todaka.robustredis;
 
 import java.util.concurrent.CompletableFuture;
 

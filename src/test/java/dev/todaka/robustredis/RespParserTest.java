@@ -1,4 +1,4 @@
-package dev.todaka.jredis;
+package dev.todaka.robustredis;
 
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;

@@ -1,4 +1,4 @@
-package dev.todaka.jredis.cluster;
+package dev.todaka.robustredis.cluster;
 
 import lombok.Value;
 

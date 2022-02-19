@@ -1,6 +1,6 @@
-package dev.todaka.jredis;
+package dev.todaka.robustredis;
 
-import dev.todaka.jredis.connection.RedisURI;
+import dev.todaka.robustredis.connection.RedisURI;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;

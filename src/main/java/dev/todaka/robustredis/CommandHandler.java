@@ -1,5 +1,6 @@
 package dev.todaka.robustredis;
 
+import dev.todaka.robustredis.protocol.RedisCommand;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -36,7 +37,7 @@ public class CommandHandler extends ChannelDuplexHandler {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-        final RedisCommand redisCommand = (RedisCommand) msg;
+        final RedisCommand<?> redisCommand = (RedisCommand<?>) msg;
         commandQueue.addLast(redisCommand);
         final var buf = ctx.alloc().buffer();
         redisCommand.writeToByteBuf(buf);
@@ -53,8 +54,14 @@ public class CommandHandler extends ChannelDuplexHandler {
         while (true) {
             final RedisResponse resp = respParser.tryParse(buf);
             if (resp == null) break;
-            final RedisCommand command = commandQueue.removeFirst();
-            command.response.complete(resp);
+            final RedisCommand<?> command = commandQueue.removeFirst();
+            if (resp instanceof RedisResponse.StringResponse) {
+                command.commandOutput.setResult(((RedisResponse.StringResponse) resp).getBody());
+            } else if (resp instanceof RedisResponse.LongResponse) {
+                command.commandOutput.setResult(((RedisResponse.LongResponse) resp).getBody());
+            } else if (resp instanceof RedisResponse.ErrorResponse) {
+                command.commandOutput.setError(((RedisResponse.ErrorResponse) resp).getBody());
+            }
         }
     }
 

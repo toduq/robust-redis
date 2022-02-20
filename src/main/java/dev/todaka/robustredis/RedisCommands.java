@@ -1,49 +1,63 @@
 package dev.todaka.robustredis;
 
-import java.util.concurrent.CompletableFuture;
+import dev.todaka.robustredis.protocol.*;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * See https://redis.io/commands
  */
 public interface RedisCommands extends CommandDispatcher {
-    // === Connection Section ===
+    // https://redis.io/commands#cluster
 
-    default CompletableFuture<RedisResponse> ping() {
-        return dispatchCommand("PING");
+    default CompletableFuture<String> clusterNodes() {
+        final var input = new CommandInput(CommandName.CLUSTER).addArg("NODES");
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 
-    default CompletableFuture<RedisResponse> echo(String message) {
-        return dispatchCommand("ECHO", emptyList(), singletonList(message));
+    // https://redis.io/commands#connection
+
+    default CompletableFuture<String> echo(String message) {
+        final var input = new CommandInput(CommandName.ECHO).addArg(message);
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 
-    // === Keys Section ===
-
-    default CompletableFuture<RedisResponse> set(String key, String value) {
-        return dispatchCommand("SET", singletonList(key), singletonList(value));
+    default CompletableFuture<String> ping() {
+        final var input = new CommandInput(CommandName.PING);
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 
-    default CompletableFuture<RedisResponse> get(String key) {
-        return dispatchCommand("GET", singletonList(key));
+    // https://redis.io/commands#generic
+
+    default CompletableFuture<String> del(String key) {
+        final var input = new CommandInput(CommandName.DEL).addKey(key);
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 
-    default CompletableFuture<RedisResponse> exists(String key) {
-        return dispatchCommand("EXISTS", singletonList(key));
+    default CompletableFuture<Long> exists(String key) {
+        final var input = new CommandInput(CommandName.EXISTS).addKey(key);
+        return dispatchCommand(new RedisCommand<>(input, new LongCommandOutput()));
     }
 
-    default CompletableFuture<RedisResponse> del(String key) {
-        return dispatchCommand("DEL", singletonList(key));
+    // https://redis.io/commands#string
+
+    default CompletableFuture<Long> decr(String key) {
+        final var input = new CommandInput(CommandName.DECR).addKey(key);
+        return dispatchCommand(new RedisCommand<>(input, new LongCommandOutput()));
     }
 
-    default CompletableFuture<RedisResponse> incr(String key) {
-        return dispatchCommand("INCR", singletonList(key));
+    default CompletableFuture<String> get(String key) {
+        final var input = new CommandInput(CommandName.GET).addKey(key);
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 
-    // === Cluster Section ===
+    default CompletableFuture<Long> incr(String key) {
+        final var input = new CommandInput(CommandName.INCR).addKey(key);
+        return dispatchCommand(new RedisCommand<>(input, new LongCommandOutput()));
+    }
 
-    default CompletableFuture<RedisResponse> clusterNodes() {
-        return dispatchCommand("CLUSTER", singletonList("NODES"));
+    default CompletableFuture<String> set(String key, String value) {
+        final var input = new CommandInput(CommandName.SET).addKey(key).addArg(value);
+        return dispatchCommand(new RedisCommand<>(input, new StringCommandOutput()));
     }
 }

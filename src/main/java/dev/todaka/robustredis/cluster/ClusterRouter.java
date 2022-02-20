@@ -1,9 +1,9 @@
 package dev.todaka.robustredis.cluster;
 
 import dev.todaka.robustredis.NodeConnection;
-import dev.todaka.robustredis.RedisCommand;
 import dev.todaka.robustredis.RedisRouter;
 import dev.todaka.robustredis.connection.RedisURI;
+import dev.todaka.robustredis.protocol.RedisCommand;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -34,13 +34,13 @@ public class ClusterRouter implements RedisRouter {
         slotIdToNode = newSlotIdToNode;
     }
 
-    public CompletableFuture<NodeConnection> findOrEstablishConnection(RedisCommand command) {
+    public CompletableFuture<NodeConnection> findOrEstablishConnection(RedisCommand<?> command) {
         int slot;
-        if (command.keys.isEmpty()) {
+        if (command.getFirstKey().isEmpty()) {
             // use slot = 0 for command without key
             slot = 0;
         } else {
-            slot = CRC16.crc16(command.keys.get(0).getBytes(StandardCharsets.UTF_8)) % 16384;
+            slot = CRC16.crc16(command.getFirstKey().getBytes(StandardCharsets.UTF_8)) % 16384;
         }
         final RedisURI uri = slotIdToNode.get(slot);
 

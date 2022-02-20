@@ -1,6 +1,7 @@
 package dev.todaka.robustredis;
 
 import dev.todaka.robustredis.connection.RedisURI;
+import dev.todaka.robustredis.protocol.RedisCommand;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -86,9 +87,8 @@ public class NodeConnection implements AutoCloseable, RedisCommands {
         workerGroup.shutdownGracefully().sync();
     }
 
-    public CompletableFuture<RedisResponse> dispatchCommand(RedisCommand redisCommand) {
-        // System.out.println("execute " + redisCommand.command);
+    public <R> CompletableFuture<R> dispatchCommand(RedisCommand<R> redisCommand) {
         channel.writeAndFlush(redisCommand);
-        return redisCommand.response;
+        return redisCommand.commandOutput.getCompletableFuture();
     }
 }

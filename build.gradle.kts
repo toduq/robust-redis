@@ -4,13 +4,17 @@ plugins {
 }
 
 group = "dev.todaka"
-version = "1.0-SNAPSHOT;we"
+version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    implementation("io.netty:netty-common:4.1.104.Final")
+    implementation("io.netty:netty-handler:4.1.104.Final")
+    implementation("io.netty:netty-transport:4.1.104.Final")
+
     testImplementation(kotlin("test"))
 }
 
@@ -23,5 +27,5 @@ kotlin {
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("dev.todaka.robustredis.MainKt")
 }

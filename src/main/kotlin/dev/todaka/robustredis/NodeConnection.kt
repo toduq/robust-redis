@@ -49,10 +49,10 @@ class NodeConnection : AutoCloseable, RedisCommands {
             handlerActivatedFuture.whenComplete { channel, throwable ->
                 if (throwable != null) {
                     nodeConnectionReadyFuture.completeExceptionally(throwable)
-                    return@whenComplete
+                } else {
+                    conn.channel = channel
+                    nodeConnectionReadyFuture.complete(conn)
                 }
-                conn.channel = channel
-                nodeConnectionReadyFuture.complete(conn)
             }
             b.handler(object : ChannelInitializer<SocketChannel>() {
                 override fun initChannel(ch: SocketChannel) {

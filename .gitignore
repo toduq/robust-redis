@@ -15,3 +15,5 @@ out/
 
 ### VS Code ###
 .vscode/
+
+dump.rdb

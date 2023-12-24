@@ -32,7 +32,6 @@ class StringCommandOutput : CommandOutput<String>() {
     }
 }
 
-
 class LongCommandOutput : CommandOutput<Long>() {
     override fun setResult(result: Long) {
         this.completableFuture.complete(result)

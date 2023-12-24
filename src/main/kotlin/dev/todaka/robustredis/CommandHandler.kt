@@ -31,7 +31,7 @@ class CommandHandler(
     }
 
     override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
-        val redisCommand: RedisCommand<*> = msg as RedisCommand<*>
+        val redisCommand = msg as RedisCommand<*>
         commandQueue.addLast(redisCommand)
         val buf = ctx.alloc().buffer()
         redisCommand.writeToByteBuf(buf)
@@ -39,19 +39,20 @@ class CommandHandler(
     }
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
-        println("on channelRead")
         val msgBuf = msg as ByteBuf
         buf.writeBytes(msgBuf)
         msgBuf.release()
         while (true) {
-            val resp: RedisResponse = respParser.tryParse(buf) ?: break
-            val command: RedisCommand<*> = commandQueue.removeFirst()
+            val resp = respParser.tryParse(buf) ?: break
+            val command = commandQueue.removeFirst()
             when (resp) {
                 is StringResponse -> command.commandOutput.setResult(resp.body)
 
                 is LongResponse -> command.commandOutput.setResult(resp.body)
 
                 is ErrorResponse -> command.commandOutput.setError(resp.body)
+
+                is NullResponse -> {} // TODO
             }
         }
     }

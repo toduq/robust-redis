@@ -9,7 +9,4 @@ data class RedisCommand<R>(
     fun writeToByteBuf(buf: ByteBuf) {
         commandInput.writeToByteBuf(buf)
     }
-
-    val firstKey: String?
-        get() = commandInput.keys?.get(0)
 }

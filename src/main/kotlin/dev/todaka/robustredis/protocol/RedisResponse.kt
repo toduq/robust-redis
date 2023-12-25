@@ -1,5 +1,4 @@
-package dev.todaka.robustredis.resp
-
+package dev.todaka.robustredis.protocol
 
 sealed interface RedisResponse
 

@@ -1,5 +1,6 @@
-package dev.todaka.robustredis.resp
+package dev.todaka.robustredis.protocol
 
+import dev.todaka.robustredis.exception.RedisProtocolException
 import io.netty.buffer.ByteBuf
 
 class RespParser {
@@ -37,7 +38,7 @@ class RespParser {
                         }
 
                         else -> {
-                            throw IllegalArgumentException("unknown response type found : " + token[0])
+                            throw RedisProtocolException("unknown response type found : " + token[0])
                         }
                     }
                 }
@@ -47,8 +48,10 @@ class RespParser {
                         return
                     }
                     val token = enqueueNBytes(buf, 2)
-                    require(!(token[0] != '\r'.code.toByte() || token[1] != '\n'.code.toByte())) {
-                        "new line expected, but found other binary : [" + token[0] + "," + token[1] + "]"
+                    if (token[0] != '\r'.code.toByte() || token[1] != '\n'.code.toByte()) {
+                        throw RedisProtocolException(
+                            "new line expected, but found other binary : [" + token[0] + "," + token[1] + "]"
+                        )
                     }
                 }
 

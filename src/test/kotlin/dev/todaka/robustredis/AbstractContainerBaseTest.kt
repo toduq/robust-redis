@@ -8,9 +8,14 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 abstract class AbstractContainerBaseTest {
-    fun redisUri() = RedisURI(
+    fun standaloneRedisUri() = RedisURI(
         redisContainer.host,
         redisContainer.getMappedPort(6379)
+    )
+
+    fun clusterRedisUri() = RedisURI(
+        redisClusterContainer.host,
+        redisClusterContainer.getMappedPort(7000)
     )
 
     companion object {
@@ -20,9 +25,15 @@ abstract class AbstractContainerBaseTest {
          */
         @Container
         @JvmStatic
-        private val redisContainer: RedisContainer = RedisContainer(
+        protected val redisContainer: RedisContainer = RedisContainer(
             DockerImageName.parse("redis:6.2.7-alpine")
         ).withExposedPorts(6379)
+
+        @Container
+        @JvmStatic
+        protected val redisClusterContainer: RedisContainer = RedisContainer(
+            DockerImageName.parse("grokzen/redis-cluster:6.2.7")
+        ).withEnv("IP", "0.0.0.0").withExposedPorts(7000, 7001, 7002, 7003, 7004, 7005)
     }
 }
 

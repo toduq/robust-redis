@@ -1,10 +1,9 @@
-package dev.todaka.robustredis
+package dev.todaka.robustredis.connection
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
-import dev.todaka.robustredis.connection.NodeConnection
-import dev.todaka.robustredis.connection.RedisURI
+import dev.todaka.robustredis.AbstractContainerBaseTest
 import org.junit.jupiter.api.Test
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.*
@@ -13,7 +12,7 @@ import java.util.*
 class NodeConnectionTest : AbstractContainerBaseTest() {
     @Test
     fun test() {
-        NodeConnection.connect(redisUri()).use { conn ->
+        NodeConnection.connectAsync(standaloneRedisUri()).get().use { conn ->
             assertThat(conn.ping().get()).isEqualTo("PONG")
             assertThat(conn.ping().get()).isEqualTo("PONG")
             assertThat(conn.echo("HELLO").get()).isEqualTo("HELLO")
@@ -25,7 +24,7 @@ class NodeConnectionTest : AbstractContainerBaseTest() {
     @Test
     fun testIncrAndDecr() {
         val key = UUID.randomUUID().toString()
-        NodeConnection.connect(redisUri()).use { conn ->
+        NodeConnection.connect(standaloneRedisUri()).use { conn ->
             assertThat(conn.exists(key).get()).isEqualTo(0L)
             assertThat(conn.incr(key).get()).isEqualTo(1L)
             assertThat(conn.incr(key).get()).isEqualTo(2L)

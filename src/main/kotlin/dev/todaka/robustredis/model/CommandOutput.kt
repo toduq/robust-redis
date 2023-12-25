@@ -1,5 +1,6 @@
 package dev.todaka.robustredis.model
 
+import dev.todaka.robustredis.exception.RedisProtocolException
 import java.util.concurrent.CompletableFuture
 
 abstract class CommandOutput<R> {
@@ -20,7 +21,7 @@ abstract class CommandOutput<R> {
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun unsupported(message: String) {
-        completableFuture.completeExceptionally(UnsupportedOperationException(message))
+        completableFuture.completeExceptionally(RedisProtocolException(message))
     }
 }
 

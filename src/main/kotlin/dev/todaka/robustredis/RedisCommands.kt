@@ -10,7 +10,7 @@ interface CommandDispatcher {
 interface RedisCommands : CommandDispatcher {
     // https://redis.io/commands#cluster
     fun clusterNodes(): CompletableFuture<String> {
-        val input = CommandInput(CommandName.CLUSTER, args = listOf("NODE"))
+        val input = CommandInput(CommandName.CLUSTER, args = listOf("NODES"))
         return dispatchCommand(RedisCommand(input, StringCommandOutput()))
     }
 

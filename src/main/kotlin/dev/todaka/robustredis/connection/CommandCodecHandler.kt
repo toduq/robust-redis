@@ -1,7 +1,8 @@
 package dev.todaka.robustredis.connection
 
+import dev.todaka.robustredis.exception.RedisConnectionClosedException
 import dev.todaka.robustredis.model.RedisCommand
-import dev.todaka.robustredis.resp.*
+import dev.todaka.robustredis.protocol.*
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelDuplexHandler
 import io.netty.channel.ChannelHandlerContext
@@ -22,7 +23,7 @@ class CommandCodecHandler : ChannelDuplexHandler() {
         buf.release()
         ctx.fireChannelInactive()
 
-        val exception = RuntimeException("connection closed")
+        val exception = RedisConnectionClosedException("connection is closed while sending command")
         commandQueue.forEach {
             if (!it.commandOutput.completableFuture.isDone) {
                 it.commandOutput.completableFuture.completeExceptionally(exception)
@@ -31,8 +32,8 @@ class CommandCodecHandler : ChannelDuplexHandler() {
     }
 
     override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
-        println("on write")
         val redisCommand = msg as RedisCommand<*>
+        println("on write ${redisCommand.commandInput.name}")
         commandQueue.addLast(redisCommand)
         val buf = ctx.alloc().buffer()
         redisCommand.writeToByteBuf(buf)
@@ -51,7 +52,7 @@ class CommandCodecHandler : ChannelDuplexHandler() {
                 is StringResponse -> command.commandOutput.resolveString(resp.body)
 
                 is LongResponse -> command.commandOutput.resolveLong(resp.body)
-                
+
                 is NullResponse -> command.commandOutput.resolveNull()
 
                 is ErrorResponse -> command.commandOutput.reject(resp.body)

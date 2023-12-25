@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "1.9.21"
-    application
 }
 
 group = "dev.todaka"
@@ -35,8 +34,4 @@ tasks.test {
 
 kotlin {
     jvmToolchain(8)
-}
-
-application {
-    mainClass.set("dev.todaka.robustredis.MainKt")
 }

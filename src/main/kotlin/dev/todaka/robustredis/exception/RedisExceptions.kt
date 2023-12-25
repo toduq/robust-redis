@@ -8,6 +8,9 @@ open class RedisInitializationException(message: String, cause: Throwable? = nul
 class RedisInitializationCanceledException(message: String, cause: Throwable? = null) :
     RedisInitializationException(message, cause)
 
+class RedisInvalidClusterException(message: String, cause: Throwable? = null) :
+    RedisInitializationException(message, cause)
+
 /**
  * Network timeoutなどの仕方がない例外
  */

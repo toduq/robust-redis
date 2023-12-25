@@ -3,6 +3,7 @@ package dev.todaka.robustredis.cluster
 import dev.todaka.robustredis.cluster.CRC16.crc16
 import dev.todaka.robustredis.connection.NodeConnection
 import dev.todaka.robustredis.connection.RedisURI
+import dev.todaka.robustredis.exception.RedisInvalidClusterException
 import dev.todaka.robustredis.model.RedisCommand
 import java.util.concurrent.CompletableFuture
 
@@ -19,16 +20,16 @@ class ClusterRouter(views: List<ClusterNodeView>) {
     private val connectionPool: MutableMap<RedisURI, CompletableFuture<NodeConnection>> = HashMap()
 
     init {
-        val newSlotIdToNode = (0..<16384).map { null as RedisURI? }.toMutableList()
-        for (view in views) {
-            val uri = RedisURI(view.ip, view.port)
-            for (slot in view.slots) {
-                for (s in slot.from..slot.to) {
-                    newSlotIdToNode[s] = uri
-                }
+        val uris = views.flatMap { view ->
+            view.slots.flatMap { slot ->
+                (slot.from..slot.to).map { slotId -> slotId to RedisURI(view.ip, view.port) }
             }
         }
-        slotIdToNode = newSlotIdToNode as List<RedisURI>
+        if (uris.size != 16384) {
+            throw RedisInvalidClusterException("Invalid CLUSTER NODES response")
+        }
+
+        slotIdToNode = uris.sortedBy { it.first }.map { it.second }
     }
 
     fun findOrEstablishConnection(command: RedisCommand<*>): CompletableFuture<NodeConnection> {

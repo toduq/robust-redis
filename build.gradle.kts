@@ -16,9 +16,8 @@ dependencies {
     implementation("io.netty:netty-transport:4.1.104.Final")
 
     // test
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1") {
-        exclude(module = "hamcrest-core")
-    }
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.28.0")
     testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
     testImplementation("io.mockk:mockk:1.13.8")

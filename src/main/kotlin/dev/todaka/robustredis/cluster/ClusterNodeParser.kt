@@ -1,6 +1,5 @@
 package dev.todaka.robustredis.cluster
 
-
 /**
  * See https://redis.io/commands/cluster-nodes
  *

@@ -1,4 +1,4 @@
-package dev.todaka.robustredis
+package dev.todaka.robustredis.connection
 
 data class RedisURI(
     val host: String,

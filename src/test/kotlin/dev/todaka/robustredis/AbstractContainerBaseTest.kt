@@ -1,5 +1,6 @@
 package dev.todaka.robustredis
 
+import dev.todaka.robustredis.connection.RedisURI
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers

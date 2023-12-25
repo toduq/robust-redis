@@ -1,4 +1,4 @@
-package dev.todaka.robustredis
+package dev.todaka.robustredis.resp
 
 import io.netty.buffer.ByteBuf
 

@@ -1,4 +1,4 @@
-package dev.todaka.robustredis
+package dev.todaka.robustredis.model
 
 enum class CommandName {
     // https://redis.io/commands#cluster

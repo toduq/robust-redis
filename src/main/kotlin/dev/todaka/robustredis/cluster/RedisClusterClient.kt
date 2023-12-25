@@ -7,8 +7,7 @@ import dev.todaka.robustredis.connection.RedisURI
 import dev.todaka.robustredis.model.RedisCommand
 import java.util.concurrent.CompletableFuture
 
-// TODO: close
-class RedisClusterConnection(
+class RedisClusterClient(
     initialEndpoint: RedisURI,
     /** Docker環境などでRedisが認識しているportと実際に接続するportが異なる場合などに、それを変換するための仕組み */
     private val clusterViewTranslator: (view: List<ClusterNodeView>) -> List<ClusterNodeView> = { it },

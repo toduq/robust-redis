@@ -7,7 +7,7 @@ import dev.todaka.robustredis.connection.NodeConnection
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.Test
 
-class RedisClusterConnectionTest : AbstractContainerBaseTest() {
+class RedisClusterClientTest : AbstractContainerBaseTest() {
     @Test
     fun test() {
         // Wait for cluster to be ready
@@ -18,7 +18,7 @@ class RedisClusterConnectionTest : AbstractContainerBaseTest() {
                 views.size == 6
             }
         }
-        val conn = RedisClusterConnection(
+        val conn = RedisClusterClient(
             clusterRedisUri(),
             clusterViewTranslator = { views ->
                 views.map { view ->

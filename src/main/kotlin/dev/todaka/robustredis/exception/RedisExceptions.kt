@@ -14,9 +14,7 @@ class RedisInvalidClusterException(message: String, cause: Throwable? = null) :
 /**
  * Network timeoutなどの仕方がない例外
  */
-open
-
-class RedisNetworkException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+open class RedisNetworkException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 class RedisAlreadyClosedException(message: String, cause: Throwable? = null) : RedisNetworkException(message, cause)
 

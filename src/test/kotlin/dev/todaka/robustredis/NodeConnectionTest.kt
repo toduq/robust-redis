@@ -4,11 +4,13 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import org.junit.jupiter.api.Test
+import org.testcontainers.junit.jupiter.Testcontainers
 
-class NodeConnectionTest {
+@Testcontainers
+class NodeConnectionTest : AbstractContainerBaseTest() {
     @Test
     fun test() {
-        NodeConnection.connect(RedisURI("127.0.0.1", 6379)).use { nodeConn ->
+        NodeConnection.connect(redisUri()).use { nodeConn ->
             assertThat(nodeConn.ping().get()).isEqualTo("PONG")
             assertThat(nodeConn.ping().get()).isEqualTo("PONG")
             assertThat(nodeConn.exists("abc").get()).isEqualTo(0L)
@@ -20,7 +22,8 @@ class NodeConnectionTest {
     fun testConnectionTimeout() {
         val started = System.currentTimeMillis()
         try {
-            NodeConnection.connect(RedisURI("10.255.255.254", 10002)).use { nodeConn -> nodeConn.ping() }
+            // sample address
+            NodeConnection.connect(RedisURI("192.0.2.0", 10002)).use { nodeConn -> nodeConn.ping() }
         } catch (e: Exception) {
             val elapsed = System.currentTimeMillis() - started
             assertThat(elapsed in 1001..2999).isTrue()

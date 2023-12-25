@@ -1,5 +1,6 @@
 package dev.todaka.robustredis.model
 
+import dev.todaka.robustredis.exception.RedisCommandException
 import dev.todaka.robustredis.exception.RedisProtocolException
 import java.util.concurrent.CompletableFuture
 
@@ -16,7 +17,7 @@ abstract class CommandOutput<R> {
         unsupported("resolveNull is not supported for this command")
 
     open fun reject(error: String) {
-        completableFuture.completeExceptionally(RuntimeException(error))
+        completableFuture.completeExceptionally(RedisCommandException(error))
     }
 
     @Suppress("NOTHING_TO_INLINE")

@@ -3,7 +3,6 @@ package dev.todaka.robustredis.connection
 import io.netty.channel.Channel
 import io.netty.channel.ChannelDuplexHandler
 import io.netty.channel.ChannelHandlerContext
-import java.util.concurrent.CompletableFuture
 
 /**
  * Channelの接続状態を管理するためのHandler
@@ -26,40 +25,45 @@ import java.util.concurrent.CompletableFuture
  * ```
  */
 class ConnectionStateHandler(
-    private val channelReadyFuture: CompletableFuture<Channel>,
-    private val channelClosedFuture: CompletableFuture<Void>,
+    private val eventListener: ChannelStateListener,
 ) : ChannelDuplexHandler() {
-    @Volatile
-    private var lastException: Throwable? = null
+    override fun handlerAdded(ctx: ChannelHandlerContext) {
+        eventListener.onAdded(ctx)
+        super.handlerAdded(ctx)
+    }
 
     override fun channelActive(ctx: ChannelHandlerContext) {
-        if (!channelReadyFuture.isDone) {
-            channelReadyFuture.complete(ctx.channel())
-        }
-        ctx.fireChannelRegistered()
+        eventListener.onReady(ctx.channel())
+        super.channelActive(ctx)
     }
 
-    /**
-     * channelInactiveは、connectionが確立された後(channelActiveが呼ばれたケース)にのみ呼び出されるが、
-     * channelUnregisteredは、connectionの確立に失敗しても呼び出される。
-     */
-    override fun channelUnregistered(ctx: ChannelHandlerContext?) {
-        if (!channelClosedFuture.isDone) {
-            lastException
-                ?.let { channelClosedFuture.completeExceptionally(it) }
-                ?: channelClosedFuture.complete(null)
+    override fun userEventTriggered(ctx: ChannelHandlerContext, evt: Any?) {
+        if (evt is ClosedReason) {
+            ctx.close() // (NodeConnectionと重複しているので、もしかしたらいらないかも)
+            eventListener.onClosed(evt)
         }
-        super.channelUnregistered(ctx)
+        super.userEventTriggered(ctx, evt)
     }
 
-    @Suppress("OVERRIDE_DEPRECATION") // ChannelInboundHandlerAdapterのexceptionCaughtはdeprecatedではない
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        if (!channelReadyFuture.isDone) {
-            channelReadyFuture.completeExceptionally(cause)
-        }
-        lastException = cause
-
-        // 何か起きたらすぐにconnectionを閉じる
-        ctx.close()
+        ctx.pipeline().fireUserEventTriggered(ClosedReason.Network(cause))
     }
+}
+
+interface ChannelStateListener {
+    /** 接続開始前に、必ず1度呼ばれる */
+    fun onAdded(ctx: ChannelHandlerContext)
+
+    /** 接続に成功した場合、最大1回呼ばれる */
+    fun onReady(channel: Channel)
+
+    /** close開始後に、必ず1度呼ばれる */
+    fun onClosed(reason: ClosedReason)
+}
+
+sealed class ClosedReason {
+    data object ManuallyClosed : ClosedReason()
+    data class Network(val cause: Throwable) : ClosedReason()
+    data class Initialization(val cause: Throwable) : ClosedReason()
 }

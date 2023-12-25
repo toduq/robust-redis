@@ -33,9 +33,9 @@ class ClusterRouter(views: List<ClusterNodeView>) {
     }
 
     fun findOrEstablishConnection(command: RedisCommand<*>): CompletableFuture<NodeConnection> {
-        val slot = command.commandInput.keys?.firstOrNull()?.let {
-            crc16(it.toByteArray(Charsets.UTF_8)) % 16384
-        } ?: 0 // use slot = 0 for command without key
+        val slot = command.commandInput.keys?.firstOrNull()
+            ?.let { crc16(it.toByteArray(Charsets.UTF_8)) % 16384 }
+            ?: 0 // use slot = 0 for command without key
 
         val uri = slotIdToNode[slot]
         synchronized(connectionPool) {

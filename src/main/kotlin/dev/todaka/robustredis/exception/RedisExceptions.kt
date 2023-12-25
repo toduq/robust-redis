@@ -5,9 +5,6 @@ package dev.todaka.robustredis.exception
  */
 open class RedisInitializationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-class RedisInitializationCanceledException(message: String, cause: Throwable? = null) :
-    RedisInitializationException(message, cause)
-
 class RedisInvalidClusterException(message: String, cause: Throwable? = null) :
     RedisInitializationException(message, cause)
 
@@ -28,3 +25,8 @@ class RedisConnectionClosedException(message: String, cause: Throwable? = null) 
 open class RedisFatalException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 class RedisProtocolException(message: String, cause: Throwable? = null) : RedisFatalException(message, cause)
+
+/**
+ * Commandの実行に失敗した場合の例外
+ */
+open class RedisCommandException(message: String) : RuntimeException(message)

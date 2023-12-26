@@ -7,10 +7,10 @@ import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelDuplexHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPromise
-import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class CommandCodecHandler : ChannelDuplexHandler() {
-    private val commandQueue = ArrayDeque<RedisCommand<*>>()
+    private val commandQueue = ConcurrentLinkedQueue<RedisCommand<*>>()
     private val respParser: RespParser = RespParser()
     private lateinit var buf: ByteBuf
 
@@ -34,7 +34,7 @@ class CommandCodecHandler : ChannelDuplexHandler() {
     override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
         val redisCommand = msg as RedisCommand<*>
         println("on write ${redisCommand.commandInput.name}")
-        commandQueue.addLast(redisCommand)
+        commandQueue.add(redisCommand)
         val buf = ctx.alloc().buffer()
         redisCommand.writeToByteBuf(buf)
         ctx.write(buf, promise)
@@ -47,7 +47,7 @@ class CommandCodecHandler : ChannelDuplexHandler() {
         msgBuf.release()
         while (true) {
             val resp = respParser.tryParse(buf) ?: break
-            val command = commandQueue.removeFirst()
+            val command = commandQueue.remove()
             when (resp) {
                 is StringResponse -> command.commandOutput.resolveString(resp.body)
 

@@ -6,7 +6,7 @@ import dev.todaka.robustredis.connection.RedisURI
 import dev.todaka.robustredis.exception.RedisAlreadyClosedException
 import dev.todaka.robustredis.model.RedisCommand
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentLinkedDeque
 
 /**
  * Standalone Redis向けのClient
@@ -17,78 +17,46 @@ import java.util.concurrent.atomic.AtomicReference
 class RedisStandaloneClient(
     private val endpoint: RedisURI
 ) : AutoCloseable, RedisCommands {
-    private val status = AtomicReference<StandaloneClientStatus>(StandaloneClientStatus.Waiting)
-    private val waitingCommand = ArrayDeque<RedisCommand<*>>()
+    private val status = StandaloneStateMachine()
+    private val waitingCommand = ConcurrentLinkedDeque<RedisCommand<*>>()
 
     init {
-        // TODO: connectとconnectAsyncを用意する
+        // TODO: CompletableFutureを返す
         connect()
     }
 
-    private fun connect() {
-        val future = synchronized(status) {
-            if (status.get() is StandaloneClientStatus.Connecting) {
-                return
-            }
-            val f = NodeConnection.connectAsync(endpoint)
-            status.set(StandaloneClientStatus.Connecting(f))
-            f
-        }
-
-        future.thenAccept { conn ->
-            synchronized(status) {
-                status.set(StandaloneClientStatus.Active(conn))
-            }
-            while (waitingCommand.isNotEmpty()) {
-                // TODO: この間に切断されたらどうする？
-                conn.dispatchCommand(waitingCommand.removeFirst())
-            }
-        }
-    }
-
     override fun <R> dispatchCommand(redisCommand: RedisCommand<R>): CompletableFuture<R> {
-        when (val it = status.get()) {
-            is StandaloneClientStatus.Connecting -> {
+        println("dispatchCommand")
+        val activeConnection = status.fetchActiveConnection()
+        if (activeConnection == null) {
+            waitingCommand.addLast(redisCommand)
+        } else {
+            try {
+                activeConnection.dispatchCommand(redisCommand)
+            } catch (e: RedisAlreadyClosedException) {
+                connect()
                 waitingCommand.addLast(redisCommand)
             }
-
-            is StandaloneClientStatus.Active -> {
-                try {
-                    it.conn.dispatchCommand(redisCommand)
-                } catch (e: RedisAlreadyClosedException) {
-                    connect() // TODO: あってる？
-                    waitingCommand.addLast(redisCommand)
-                }
-            }
-
-            StandaloneClientStatus.Waiting -> TODO()
         }
 
         return redisCommand.commandOutput.completableFuture
     }
 
-    override fun close() {
-        when (val it = status.get()) {
-            is StandaloneClientStatus.Connecting -> {
-                it.future.thenAccept(NodeConnection::close)
-            }
-
-            is StandaloneClientStatus.Active -> {
-                it.conn.close()
-            }
-
-            StandaloneClientStatus.Waiting -> TODO()
-        }
+    private fun connect() {
+        println("on connect")
+        status.connect(
+            createConn = { NodeConnection.connectAsync(endpoint) },
+            onActive = {
+                println("onActive")
+                while (waitingCommand.isNotEmpty()) {
+                    val command = waitingCommand.removeFirst()
+                    dispatchCommand(command)
+                }
+            },
+        )
     }
-}
 
-sealed interface StandaloneClientStatus {
-    /** 初期状態 */
-    data object Waiting : StandaloneClientStatus
-
-    /** 接続待ち */
-    data class Connecting(val future: CompletableFuture<NodeConnection>) : StandaloneClientStatus
-
-    /** 接続済み */
-    data class Active(val conn: NodeConnection) : StandaloneClientStatus
+    override fun close() {
+        status.close()
+    }
 }

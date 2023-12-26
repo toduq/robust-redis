@@ -26,6 +26,8 @@ open class RedisFatalException(message: String, cause: Throwable? = null) : Runt
 
 class RedisProtocolException(message: String, cause: Throwable? = null) : RedisFatalException(message, cause)
 
+class RedisStateMachineException(message: String, cause: Throwable? = null) : RedisFatalException(message, cause)
+
 /**
  * Commandの実行に失敗した場合の例外
  */
